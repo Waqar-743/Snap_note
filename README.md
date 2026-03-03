@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="../SnapNote-logo-white.png" alt="SnapNote" width="120" />
+  <img src="SnapNote-logo-white.png" alt="SnapNote" width="120" />
 </p>
 
 <h1 align="center">SnapNote</h1>
