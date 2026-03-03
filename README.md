@@ -80,4 +80,4 @@ npm run tauri build
 - **OCR:** Tesseract (via rusty-tesseract)
 - **Icons:** Lucide React
 
-                                                                   ***Build with Headache***
+  ***Build with Headache***
