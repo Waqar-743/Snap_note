@@ -1,39 +1,167 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-html,
-body,
-#root {
-  width: 100%;
-  height: 100%;
-  margin: 0;
+/* ── Base ────────────────────────────────────────────── */
+html, body, #root {
+  @apply w-full h-full m-0;
 }
 
 body {
-  @apply bg-zinc-100 text-zinc-900 antialiased;
+  @apply bg-white text-gray-900 antialiased font-sans transition-colors duration-300;
 }
 
+.dark body {
+  @apply bg-gray-950 text-gray-100;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { @apply bg-transparent; }
+::-webkit-scrollbar-thumb { @apply rounded-full bg-gray-300; }
+.dark ::-webkit-scrollbar-thumb { @apply bg-gray-700; }
+
+/* ── Window drag region (Tauri frameless) ────────────── */
+.drag-region {
+  -webkit-app-region: drag;
+}
+.no-drag {
+  -webkit-app-region: no-drag;
+}
+
+/* ── Editor (TipTap / ProseMirror) ───────────────────── */
 .tiptap-editor {
-  @apply text-zinc-800;
+  @apply text-gray-800 leading-relaxed;
+}
+.dark .tiptap-editor {
+  @apply text-gray-200;
 }
 
-.tiptap-editor p,
-.tiptap-editor .image-node-block,
-.tiptap-editor hr {
-  @apply mb-4 border-b border-zinc-100 pb-4;
+.tiptap-editor:focus { outline: none; }
+
+.tiptap-editor p {
+  @apply mb-3;
 }
 
-.tiptap-editor > *:last-child {
-  @apply mb-0 border-b-0 pb-0;
+.tiptap-editor h1 {
+  @apply text-2xl font-bold mb-4 mt-6 text-gray-900;
+}
+.dark .tiptap-editor h1 {
+  @apply text-white;
+}
+
+.tiptap-editor h2 {
+  @apply text-xl font-semibold mb-3 mt-5 text-gray-800;
+}
+.dark .tiptap-editor h2 {
+  @apply text-gray-100;
+}
+
+.tiptap-editor h3 {
+  @apply text-lg font-medium mb-2 mt-4 text-gray-700;
+}
+.dark .tiptap-editor h3 {
+  @apply text-gray-200;
+}
+
+.tiptap-editor ul {
+  @apply list-disc pl-6 mb-3;
+}
+.tiptap-editor ol {
+  @apply list-decimal pl-6 mb-3;
+}
+
+.tiptap-editor blockquote {
+  @apply border-l-4 border-blue-500 pl-4 italic text-gray-600 my-4;
+}
+.dark .tiptap-editor blockquote {
+  @apply border-blue-400 text-gray-400;
+}
+
+.tiptap-editor code {
+  @apply bg-gray-100 text-pink-600 rounded px-1.5 py-0.5 text-sm font-mono;
+}
+.dark .tiptap-editor code {
+  @apply bg-gray-800 text-pink-400;
+}
+
+.tiptap-editor pre {
+  @apply bg-gray-900 text-gray-100 rounded-lg p-4 my-4 overflow-x-auto text-sm font-mono;
+}
+.dark .tiptap-editor pre {
+  @apply bg-gray-800;
+}
+.tiptap-editor pre code {
+  @apply bg-transparent text-inherit p-0;
 }
 
 .tiptap-editor img {
-  max-height: 300px;
-  @apply max-w-full rounded-lg border border-zinc-200 object-contain;
+  @apply max-w-full max-h-[300px] rounded-lg border border-gray-200 object-contain my-4;
+}
+.dark .tiptap-editor img {
+  @apply border-gray-700;
 }
 
-.tiptap-editor hr,
+.tiptap-editor hr {
+  @apply border-gray-200 my-6;
+}
+.dark .tiptap-editor hr {
+  @apply border-gray-700;
+}
+
 .tiptap-editor .editor-hr {
-  @apply border-zinc-300;
+  @apply border-gray-200;
+}
+.dark .tiptap-editor .editor-hr {
+  @apply border-gray-700;
+}
+
+.tiptap-editor mark {
+  @apply bg-yellow-200 rounded px-0.5;
+}
+.dark .tiptap-editor mark {
+  @apply bg-yellow-500/30 text-yellow-200;
+}
+
+/* Task list */
+.tiptap-editor ul[data-type="taskList"] {
+  @apply list-none pl-0;
+}
+.tiptap-editor ul[data-type="taskList"] li {
+  @apply flex items-start gap-2 mb-1;
+}
+.tiptap-editor ul[data-type="taskList"] li label {
+  @apply mt-0.5;
+}
+
+/* Placeholder */
+.tiptap-editor p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  @apply text-gray-400 float-left h-0 pointer-events-none;
+}
+.dark .tiptap-editor p.is-editor-empty:first-child::before {
+  @apply text-gray-600;
+}
+
+/* ── Captured content flash animation ────────────────── */
+@keyframes capturedFlash {
+  0% { background-color: rgba(37, 99, 235, 0.12); }
+  100% { background-color: transparent; }
+}
+.captured-flash {
+  animation: capturedFlash 1.2s ease-out;
+}
+
+/* ── Tooltip hover ───────────────────────────────────── */
+[data-tooltip] {
+  @apply relative;
+}
+[data-tooltip]:hover::after {
+  content: attr(data-tooltip);
+  @apply absolute -bottom-8 left-1/2 -translate-x-1/2 whitespace-nowrap rounded bg-gray-900 px-2 py-1 text-xs text-white z-50 pointer-events-none;
+}
+.dark [data-tooltip]:hover::after {
+  @apply bg-gray-700;
 }

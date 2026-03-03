@@ -1,35 +1,76 @@
-# Tauri + React + Typescript
+<p align="center">
+  <img src="../SnapNote-logo-white.png" alt="SnapNote" width="120" />
+</p>
 
-This template should help get you started developing with Tauri, React and Typescript in Vite.
+<h1 align="center">SnapNote</h1>
 
-## Recommended IDE Setup
+<p align="center">
+  A modern desktop note-taking app with clipboard capture, OCR, and dark mode.<br/>
+  Built with <strong>Tauri v2 + React + TypeScript + TipTap</strong>.
+</p>
 
-- [VS Code](https://code.visualstudio.com/) + [Tauri](https://marketplace.visualstudio.com/items?itemName=tauri-apps.tauri-vscode) + [rust-analyzer](https://marketplace.visualstudio.com/items?itemName=rust-lang.rust-analyzer)
+---
+
+## Features
+
+- **Global Clipboard Capture** — Press `Ctrl+Alt+C` (or `⌘+Alt+C` on macOS) anywhere to auto-insert copied text/images into your note
+- **Show / Focus App** — Press `Ctrl+Alt+O` (or `⌘+Alt+O` on macOS) to bring the app to the foreground
+- **Dark / Light Mode** — Toggle with one click; remembers your preference
+- **Rich Text Editor** — Bold, italic, underline, strikethrough, highlight, headings, lists, task lists, blockquotes, code, and more
+- **Image Paste + OCR** — Paste images directly; hover to extract text via Tesseract OCR
+- **Cross-platform** — Windows, macOS, and Linux
 
 ## Run the app
 
-Important: run commands from this folder (`snapnote/`), not the parent workspace folder.
+> **Important:** Run commands from the `snapnote/` folder, not the parent workspace folder.
 
 ```bash
-cd /workspaces/Snap_note/snapnote
+cd snapnote
 npm install
-npm run tauri:dev
+npm run tauri dev
 ```
 
-## Headless/dev-container run
-
-If you are in a headless container (GTK display error), use:
+### Headless / Dev Container
 
 ```bash
-cd /workspaces/Snap_note/snapnote
+cd snapnote
 npm run tauri:dev:headless
 ```
 
+## Build installers
+
+```bash
+cd snapnote
+npm run tauri build
+```
+
+Outputs are in `src-tauri/target/release/bundle/` (`.msi`, `.exe`, `.deb`, `.AppImage`, `.dmg`).
+
+## Keyboard Shortcuts
+
+| Shortcut | Action |
+|---|---|
+| `Ctrl+Alt+C` | Capture clipboard into note |
+| `Ctrl+Alt+O` | Show / focus the app window |
+| `Ctrl+B` | Bold |
+| `Ctrl+I` | Italic |
+| `Ctrl+U` | Underline |
+| `Ctrl+Shift+X` | Strikethrough |
+| `Ctrl+Shift+H` | Highlight |
+| `Ctrl+Z` | Undo |
+| `Ctrl+Shift+Z` | Redo |
+
+> On macOS, replace `Ctrl` with `⌘`.
+
 ## Troubleshooting
 
-- `ENOENT ... /workspaces/Snap_note/package.json`: you are in the wrong directory. Use `cd /workspaces/Snap_note/snapnote`.
-- `Port 1420 is already in use`: run `npm run ports:clean` and then `npm run tauri:dev`.
-- OCR button says Tesseract is missing:
-	- Linux: `sudo apt install tesseract-ocr`
-	- macOS: `brew install tesseract`
-	- Windows: install Tesseract and add it to `PATH`.
+- **`ENOENT ... package.json`** — You are in the wrong directory. Use `cd snapnote`.
+- **Port 1420 in use** — Run `npm run ports:clean` then `npm run tauri dev`.
+- **OCR not working** — Install Tesseract:
+  - Linux: `sudo apt install tesseract-ocr`
+  - macOS: `brew install tesseract`
+  - Windows: Install from [UB-Mannheim builds](https://github.com/UB-Mannheim/tesseract/wiki) and add to `PATH`.
+
+## License
+
+MIT
