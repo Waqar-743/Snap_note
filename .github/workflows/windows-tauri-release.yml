@@ -37,7 +37,7 @@ jobs:
           workspaces: snapnote/src-tauri -> target
 
       - name: Install frontend dependencies
-        run: npm ci
+        run: npm ci --legacy-peer-deps
 
       - name: Build Tauri app (Windows bundles)
         run: npm run tauri build
