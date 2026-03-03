@@ -1,28 +1,54 @@
 <p align="center">
-  <img src="SnapNote-logo-white.png" alt="SnapNote" width="120" />
+  <img src="SnapNote-App.png" alt="SnapNote" width="150" />
 </p>
 
 <h1 align="center">SnapNote</h1>
 
 <p align="center">
-  A modern desktop note-taking app with clipboard capture, OCR, and dark mode.<br/>
-  Built with <strong>Tauri v2 + React + TypeScript + TipTap</strong>.
+  <strong>A modern desktop note-taking app with clipboard capture, OCR, and dark mode.</strong><br/>
+  Built with Tauri v2 + React + TypeScript + TipTap
+</p>
+
+<p align="center">
+  <a href="https://github.com/Waqar-743/Snap_note/releases">
+    <img src="https://img.shields.io/github/v/release/Waqar-743/Snap_note?style=flat-square" alt="Release" />
+  </a>
+  <img src="https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-blue?style=flat-square" alt="Platforms" />
+  <img src="https://img.shields.io/github/license/Waqar-743/Snap_note?style=flat-square" alt="License" />
 </p>
 
 ---
 
 ## Features
 
-- **Global Clipboard Capture** — Press `Ctrl+Alt+C` (or `⌘+Alt+C` on macOS) anywhere to auto-insert copied text/images into your note
-- **Show / Focus App** — Press `Ctrl+Alt+O` (or `⌘+Alt+O` on macOS) to bring the app to the foreground
-- **Dark / Light Mode** — Toggle with one click; remembers your preference
-- **Rich Text Editor** — Bold, italic, underline, strikethrough, highlight, headings, lists, task lists, blockquotes, code, and more
+- **Multi-Tab Editor** — Work on multiple notes simultaneously with tabs you can rename, close, and create
+- **Global Clipboard Capture** — Press `Ctrl+Alt+C` (or `⌘+Alt+C` on macOS) anywhere to auto-insert copied text/images into the active tab
+- **Show / Focus App** — Press `Ctrl+Alt+O` (or `⌘+Alt+O`) to bring the app to the foreground instantly
+- **Dark / Light Mode** — Toggle with one click; your preference is remembered
+- **Rich Text Editing** — Bold, italic, underline, strikethrough, highlight, headings, lists, task lists, blockquotes, code blocks, and more
 - **Image Paste + OCR** — Paste images directly; hover to extract text via Tesseract OCR
 - **Cross-platform** — Windows, macOS, and Linux
 
-## Run the app
+## Screenshot
 
-> **Important:** Run commands from the `snapnote/` folder, not the parent workspace folder.
+<p align="center">
+  <img src="SnapNote-logo-white.png" alt="SnapNote Light Mode" width="200" />
+  &nbsp;&nbsp;
+  <img src="SnapNote-logo-Dark.png" alt="SnapNote Dark Mode" width="200" />
+</p>
+
+## Download
+
+Download the latest installers from the [Releases page](https://github.com/Waqar-743/Snap_note/releases).
+
+| Platform | File |
+|----------|------|
+| Windows (recommended) | `SnapNote_x.x.x_x64-setup.exe` |
+| Windows (MSI) | `SnapNote_x.x.x_x64_en-US.msi` |
+| Linux (AppImage) | `SnapNote_x.x.x_amd64.AppImage` |
+| Linux (deb) | `SnapNote_x.x.x_amd64.deb` |
+
+## Development
 
 ```bash
 cd snapnote
@@ -30,27 +56,18 @@ npm install
 npm run tauri dev
 ```
 
-### Headless / Dev Container
-
-```bash
-cd snapnote
-npm run tauri:dev:headless
-```
-
-## Build installers
+### Build Installers
 
 ```bash
 cd snapnote
 npm run tauri build
 ```
 
-Outputs are in `src-tauri/target/release/bundle/` (`.msi`, `.exe`, `.deb`, `.AppImage`, `.dmg`).
-
 ## Keyboard Shortcuts
 
 | Shortcut | Action |
-|---|---|
-| `Ctrl+Alt+C` | Capture clipboard into note |
+|----------|--------|
+| `Ctrl+Alt+C` | Capture clipboard into active tab |
 | `Ctrl+Alt+O` | Show / focus the app window |
 | `Ctrl+B` | Bold |
 | `Ctrl+I` | Italic |
@@ -62,13 +79,13 @@ Outputs are in `src-tauri/target/release/bundle/` (`.msi`, `.exe`, `.deb`, `.App
 
 > On macOS, replace `Ctrl` with `⌘`.
 
-## Troubleshooting
+## Tech Stack
 
-- **`ENOENT ... package.json`** — You are in the wrong directory. Use `cd snapnote`.
-- **Port 1420 in use** — Run `npm run ports:clean` then `npm run tauri dev`.
-- **OCR not working** — Install Tesseract:
-  - Linux: `sudo apt install tesseract-ocr`
-  - macOS: `brew install tesseract`
-  - Windows: Install from [UB-Mannheim builds](https://github.com/UB-Mannheim/tesseract/wiki) and add to `PATH`.
+- **Frontend:** React 19, TypeScript, Tailwind CSS, TipTap Editor
+- **Backend:** Tauri v2, Rust
+- **OCR:** Tesseract (via rusty-tesseract)
+- **Icons:** Lucide React
 
-***Create with Headaches***
+## License
+
+MIT

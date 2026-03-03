@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="../SnapNote-logo-white.png" alt="SnapNote" width="120" />
+  <img src="../SnapNote-App.png" alt="SnapNote" width="150" />
 </p>
 
 <h1 align="center">SnapNote</h1>
@@ -13,7 +13,8 @@
 
 ## Features
 
-- **Global Clipboard Capture** — Press `Ctrl+Alt+C` (or `⌘+Alt+C` on macOS) anywhere to auto-insert copied text/images into your note
+- **Multi-Tab Editor** — Work on multiple notes with tabs (rename, close, create new)
+- **Global Clipboard Capture** — Press `Ctrl+Alt+C` (or `⌘+Alt+C` on macOS) anywhere to auto-insert copied text/images into the active tab
 - **Show / Focus App** — Press `Ctrl+Alt+O` (or `⌘+Alt+O` on macOS) to bring the app to the foreground
 - **Dark / Light Mode** — Toggle with one click; remembers your preference
 - **Rich Text Editor** — Bold, italic, underline, strikethrough, highlight, headings, lists, task lists, blockquotes, code, and more
@@ -50,7 +51,7 @@ Outputs are in `src-tauri/target/release/bundle/` (`.msi`, `.exe`, `.deb`, `.App
 
 | Shortcut | Action |
 |---|---|
-| `Ctrl+Alt+C` | Capture clipboard into note |
+| `Ctrl+Alt+C` | Capture clipboard into active tab |
 | `Ctrl+Alt+O` | Show / focus the app window |
 | `Ctrl+B` | Bold |
 | `Ctrl+I` | Italic |

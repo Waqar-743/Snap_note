@@ -6,6 +6,7 @@ import {
   NodeViewWrapper,
   ReactNodeViewRenderer,
   useEditor,
+  type Editor,
   type NodeViewProps,
 } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
@@ -39,16 +40,23 @@ import {
   ScanSearch,
   Keyboard,
   X,
+  Plus,
 } from "lucide-react";
 
-import logoWhite from "./assets/logo-white.png";
 import logoDark from "./assets/logo-dark.png";
+import logoWhite from "./assets/logo-white.png";
 
 /* ── Types ───────────────────────────────────────────── */
 type ClipboardPayload = {
   type: "text" | "image";
   data: string;
 };
+
+interface TabData {
+  id: string;
+  title: string;
+  content: string;
+}
 
 /* ── Dark mode hook ──────────────────────────────────── */
 function useDarkMode() {
@@ -90,6 +98,9 @@ const readUrlAsDataUrl = async (src: string) => {
 const isMac =
   typeof navigator !== "undefined" && /mac/i.test(navigator.platform);
 const mod = isMac ? "⌘" : "Ctrl";
+
+const generateId = () =>
+  Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
 
 /* ── OCR Image Node ─────────────────────────────────── */
 const OCRImageNode = (props: NodeViewProps) => {
@@ -163,6 +174,19 @@ const OCRImage = Image.extend({
   },
 });
 
+/* ── Reusable editor extensions factory ─────────────── */
+const makeExtensions = () => [
+  StarterKit.configure({
+    horizontalRule: { HTMLAttributes: { class: "editor-hr" } },
+  }),
+  OCRImage.configure({ allowBase64: true }),
+  Underline,
+  Highlight.configure({ multicolor: false }),
+  Placeholder.configure({ placeholder: "Start typing your note…" }),
+  TaskList,
+  TaskItem.configure({ nested: true }),
+];
+
 /* ── Toolbar Button ─────────────────────────────────── */
 const ToolbarBtn = ({
   title,
@@ -211,7 +235,7 @@ const ShortcutOverlay = ({ onClose }: { onClose: () => void }) => (
       </h3>
       <div className="space-y-2 text-sm">
         {[
-          [`${mod}+Alt+C`, "Capture clipboard to note"],
+          [`${mod}+Alt+C`, "Capture clipboard to active tab"],
           [`${mod}+Alt+O`, "Show / focus app"],
           [`${mod}+B`, "Bold"],
           [`${mod}+I`, "Italic"],
@@ -233,29 +257,23 @@ const ShortcutOverlay = ({ onClose }: { onClose: () => void }) => (
   </div>
 );
 
-/* ── Main App ────────────────────────────────────────── */
-function App() {
-  const [dark, setDark] = useDarkMode();
-  const [showShortcuts, setShowShortcuts] = useState(false);
-  const [capturedCount, setCapturedCount] = useState(0);
-  const editorWrapRef = useRef<HTMLDivElement>(null);
-
+/* ── Tab Editor Wrapper ─────────────────────────────── */
+function TabEditor({
+  tabId,
+  initialContent,
+  isActive,
+  onContentChange,
+  editorRef,
+}: {
+  tabId: string;
+  initialContent: string;
+  isActive: boolean;
+  onContentChange: (id: string, html: string) => void;
+  editorRef: (id: string, editor: Editor | null) => void;
+}) {
   const editor = useEditor({
-    extensions: [
-      StarterKit.configure({
-        horizontalRule: {
-          HTMLAttributes: { class: "editor-hr" },
-        },
-      }),
-      OCRImage.configure({ allowBase64: true }),
-      Underline,
-      Highlight.configure({ multicolor: false }),
-      Placeholder.configure({
-        placeholder: "Start typing your note…",
-      }),
-      TaskList,
-      TaskItem.configure({ nested: true }),
-    ],
+    extensions: makeExtensions(),
+    content: initialContent,
     editorProps: {
       attributes: {
         class:
@@ -276,20 +294,134 @@ function App() {
         return true;
       },
     },
+    onUpdate: ({ editor: ed }) => {
+      onContentChange(tabId, ed.getHTML());
+    },
   });
+
+  useEffect(() => {
+    editorRef(tabId, editor);
+    return () => {
+      editorRef(tabId, null);
+    };
+  }, [tabId, editor, editorRef]);
+
+  if (!isActive) return null;
+
+  return <EditorContent editor={editor} />;
+}
+
+/* ── Main App ────────────────────────────────────────── */
+function App() {
+  const [dark, setDark] = useDarkMode();
+  const [showShortcuts, setShowShortcuts] = useState(false);
+  const [capturedCount, setCapturedCount] = useState(0);
+  const editorWrapRef = useRef<HTMLDivElement>(null);
+  const editorsMapRef = useRef<Map<string, Editor>>(new Map());
+
+  /* ── Tab state ─────────────────────────────────────── */
+  const [tabs, setTabs] = useState<TabData[]>(() => {
+    const saved = localStorage.getItem("snapnote-tabs");
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved) as TabData[];
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      } catch {
+        /* ignore */
+      }
+    }
+    return [{ id: generateId(), title: "Untitled", content: "" }];
+  });
+  const [activeTabId, setActiveTabId] = useState<string>(() => {
+    const saved = localStorage.getItem("snapnote-active-tab");
+    if (saved && tabs.some((t) => t.id === saved)) return saved;
+    return tabs[0].id;
+  });
+  const [editingTabId, setEditingTabId] = useState<string | null>(null);
+  const renameInputRef = useRef<HTMLInputElement>(null);
+
+  // Persist tabs
+  useEffect(() => {
+    localStorage.setItem("snapnote-tabs", JSON.stringify(tabs));
+  }, [tabs]);
+  useEffect(() => {
+    localStorage.setItem("snapnote-active-tab", activeTabId);
+  }, [activeTabId]);
+
+  // Focus rename input
+  useEffect(() => {
+    if (editingTabId && renameInputRef.current) {
+      renameInputRef.current.focus();
+      renameInputRef.current.select();
+    }
+  }, [editingTabId]);
+
+  const handleEditorRef = useCallback(
+    (id: string, editor: Editor | null) => {
+      if (editor) {
+        editorsMapRef.current.set(id, editor);
+      } else {
+        editorsMapRef.current.delete(id);
+      }
+    },
+    []
+  );
+
+  const handleContentChange = useCallback((id: string, html: string) => {
+    setTabs((prev) =>
+      prev.map((t) => (t.id === id ? { ...t, content: html } : t))
+    );
+  }, []);
+
+  const addTab = useCallback(() => {
+    const newTab: TabData = {
+      id: generateId(),
+      title: "Untitled",
+      content: "",
+    };
+    setTabs((prev) => [...prev, newTab]);
+    setActiveTabId(newTab.id);
+  }, []);
+
+  const closeTab = useCallback(
+    (id: string) => {
+      setTabs((prev) => {
+        if (prev.length <= 1) return prev;
+        const idx = prev.findIndex((t) => t.id === id);
+        const next = prev.filter((t) => t.id !== id);
+        if (id === activeTabId) {
+          const newIdx = Math.min(idx, next.length - 1);
+          setActiveTabId(next[newIdx].id);
+        }
+        return next;
+      });
+    },
+    [activeTabId]
+  );
+
+  const renameTab = useCallback((id: string, newTitle: string) => {
+    const trimmed = newTitle.trim();
+    setTabs((prev) =>
+      prev.map((t) =>
+        t.id === id ? { ...t, title: trimmed || "Untitled" } : t
+      )
+    );
+    setEditingTabId(null);
+  }, []);
 
   /* ── Clipboard-captured listener ─────────────────── */
   useEffect(() => {
-    if (!editor) return;
-
     let unlisten: UnlistenFn | undefined;
 
     void listen<ClipboardPayload>("clipboard-captured", (event) => {
       const payload = event.payload;
       setCapturedCount((n) => n + 1);
 
+      const activeEditor = editorsMapRef.current.get(activeTabId);
+      if (!activeEditor) return;
+
       if (payload.type === "text") {
-        editor
+        activeEditor
           .chain()
           .focus("end")
           .insertContent(payload.data)
@@ -299,7 +431,7 @@ function App() {
         const src = payload.data.startsWith("data:image")
           ? payload.data
           : convertFileSrc(payload.data);
-        editor
+        activeEditor
           .chain()
           .focus("end")
           .setImage({ src })
@@ -307,7 +439,6 @@ function App() {
           .run();
       }
 
-      // Visual flash feedback
       if (editorWrapRef.current) {
         editorWrapRef.current.classList.add("captured-flash");
         setTimeout(
@@ -322,43 +453,112 @@ function App() {
     return () => {
       if (unlisten) void unlisten();
     };
-  }, [editor]);
+  }, [activeTabId]);
 
   const toggleDark = useCallback(() => setDark((d) => !d), [setDark]);
 
-  if (!editor) return null;
+  const activeEditor = editorsMapRef.current.get(activeTabId);
 
   return (
     <div className="flex h-screen w-screen flex-col overflow-hidden bg-gray-50 transition-colors duration-300 dark:bg-gray-950">
-      {/* ── Header ──────────────────────────────────── */}
-      <header className="drag-region flex h-12 shrink-0 items-center justify-between border-b border-gray-200 bg-white px-4 dark:border-gray-800 dark:bg-gray-900">
-        <div className="flex items-center gap-2.5">
+      {/* ── Header: Logo + Tabs + Controls ─────────── */}
+      <header className="flex shrink-0 items-stretch border-b border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900">
+        {/* Logo */}
+        <div className="drag-region flex items-center gap-2 px-3 py-2 border-r border-gray-200 dark:border-gray-800">
           <img
-            src={dark ? logoWhite : logoDark}
+            src={dark ? logoDark : logoWhite}
             alt="SnapNote"
-            className="h-7 w-auto object-contain"
+            className="h-6 w-auto object-contain"
           />
-          <span className="text-sm font-semibold tracking-tight text-gray-900 dark:text-white">
+          <span className="text-sm font-semibold tracking-tight text-gray-900 dark:text-white select-none">
             SnapNote
           </span>
         </div>
 
-        <div className="no-drag flex items-center gap-1">
-          {/* Captured badge */}
+        {/* Tab Strip */}
+        <div className="no-drag flex flex-1 items-end overflow-x-auto px-1 pt-1">
+          {tabs.map((tab) => {
+            const isActive = tab.id === activeTabId;
+            return (
+              <div
+                key={tab.id}
+                onClick={() => setActiveTabId(tab.id)}
+                className={`group relative flex cursor-pointer items-center gap-1 rounded-t-lg border border-b-0 px-3 py-1.5 text-xs font-medium transition-all select-none mr-0.5 min-w-[80px] max-w-[160px] ${
+                  isActive
+                    ? "border-gray-200 bg-white text-gray-900 dark:border-gray-700 dark:bg-gray-800 dark:text-white z-10"
+                    : "border-transparent bg-gray-100 text-gray-500 hover:bg-gray-200 hover:text-gray-700 dark:bg-gray-900 dark:text-gray-500 dark:hover:bg-gray-800 dark:hover:text-gray-300"
+                }`}
+              >
+                {editingTabId === tab.id ? (
+                  <input
+                    ref={renameInputRef}
+                    type="text"
+                    defaultValue={tab.title}
+                    className="w-full bg-transparent text-xs outline-none"
+                    onBlur={(e) => renameTab(tab.id, e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter")
+                        renameTab(tab.id, e.currentTarget.value);
+                      if (e.key === "Escape") setEditingTabId(null);
+                    }}
+                    onClick={(e) => e.stopPropagation()}
+                  />
+                ) : (
+                  <span
+                    className="truncate"
+                    onDoubleClick={(e) => {
+                      e.stopPropagation();
+                      setEditingTabId(tab.id);
+                    }}
+                  >
+                    {tab.title}
+                  </span>
+                )}
+
+                {tabs.length > 1 && (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      closeTab(tab.id);
+                    }}
+                    className={`ml-auto shrink-0 rounded p-0.5 transition ${
+                      isActive
+                        ? "text-gray-400 hover:bg-gray-200 hover:text-gray-700 dark:hover:bg-gray-700 dark:hover:text-gray-200"
+                        : "text-gray-400 opacity-0 group-hover:opacity-100 hover:bg-gray-300 hover:text-gray-700 dark:hover:bg-gray-700 dark:hover:text-gray-200"
+                    }`}
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                )}
+              </div>
+            );
+          })}
+
+          <button
+            type="button"
+            title="New tab"
+            onClick={addTab}
+            className="ml-0.5 flex h-7 w-7 shrink-0 items-center justify-center self-end rounded-t-lg text-gray-400 transition hover:bg-gray-200 hover:text-gray-700 dark:hover:bg-gray-800 dark:hover:text-gray-200"
+          >
+            <Plus className="h-4 w-4" />
+          </button>
+        </div>
+
+        {/* Right controls */}
+        <div className="no-drag flex items-center gap-0.5 px-2">
           {capturedCount > 0 && (
-            <div className="mr-2 flex items-center gap-1 rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-700 dark:bg-blue-900/40 dark:text-blue-300">
+            <div className="mr-1 flex items-center gap-1 rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-medium text-blue-700 dark:bg-blue-900/40 dark:text-blue-300">
               <Clipboard className="h-3 w-3" />
               {capturedCount}
             </div>
           )}
-
           <ToolbarBtn
             title="Keyboard shortcuts"
             onClick={() => setShowShortcuts(true)}
           >
             <Keyboard className="h-4 w-4" />
           </ToolbarBtn>
-
           <ToolbarBtn
             title={dark ? "Light mode" : "Dark mode"}
             onClick={toggleDark}
@@ -376,36 +576,40 @@ function App() {
       <div className="flex shrink-0 flex-wrap items-center gap-0.5 border-b border-gray-200 bg-white px-3 py-1.5 dark:border-gray-800 dark:bg-gray-900">
         <ToolbarBtn
           title="Bold"
-          active={editor.isActive("bold")}
-          onClick={() => editor.chain().focus().toggleBold().run()}
+          active={activeEditor?.isActive("bold")}
+          onClick={() => activeEditor?.chain().focus().toggleBold().run()}
         >
           <Bold className="h-4 w-4" />
         </ToolbarBtn>
         <ToolbarBtn
           title="Italic"
-          active={editor.isActive("italic")}
-          onClick={() => editor.chain().focus().toggleItalic().run()}
+          active={activeEditor?.isActive("italic")}
+          onClick={() => activeEditor?.chain().focus().toggleItalic().run()}
         >
           <Italic className="h-4 w-4" />
         </ToolbarBtn>
         <ToolbarBtn
           title="Underline"
-          active={editor.isActive("underline")}
-          onClick={() => editor.chain().focus().toggleUnderline().run()}
+          active={activeEditor?.isActive("underline")}
+          onClick={() =>
+            activeEditor?.chain().focus().toggleUnderline().run()
+          }
         >
           <UnderlineIcon className="h-4 w-4" />
         </ToolbarBtn>
         <ToolbarBtn
           title="Strikethrough"
-          active={editor.isActive("strike")}
-          onClick={() => editor.chain().focus().toggleStrike().run()}
+          active={activeEditor?.isActive("strike")}
+          onClick={() => activeEditor?.chain().focus().toggleStrike().run()}
         >
           <Strikethrough className="h-4 w-4" />
         </ToolbarBtn>
         <ToolbarBtn
           title="Highlight"
-          active={editor.isActive("highlight")}
-          onClick={() => editor.chain().focus().toggleHighlight().run()}
+          active={activeEditor?.isActive("highlight")}
+          onClick={() =>
+            activeEditor?.chain().focus().toggleHighlight().run()
+          }
         >
           <Highlighter className="h-4 w-4" />
         </ToolbarBtn>
@@ -414,27 +618,27 @@ function App() {
 
         <ToolbarBtn
           title="Heading 1"
-          active={editor.isActive("heading", { level: 1 })}
+          active={activeEditor?.isActive("heading", { level: 1 })}
           onClick={() =>
-            editor.chain().focus().toggleHeading({ level: 1 }).run()
+            activeEditor?.chain().focus().toggleHeading({ level: 1 }).run()
           }
         >
           <Heading1 className="h-4 w-4" />
         </ToolbarBtn>
         <ToolbarBtn
           title="Heading 2"
-          active={editor.isActive("heading", { level: 2 })}
+          active={activeEditor?.isActive("heading", { level: 2 })}
           onClick={() =>
-            editor.chain().focus().toggleHeading({ level: 2 }).run()
+            activeEditor?.chain().focus().toggleHeading({ level: 2 }).run()
           }
         >
           <Heading2 className="h-4 w-4" />
         </ToolbarBtn>
         <ToolbarBtn
           title="Heading 3"
-          active={editor.isActive("heading", { level: 3 })}
+          active={activeEditor?.isActive("heading", { level: 3 })}
           onClick={() =>
-            editor.chain().focus().toggleHeading({ level: 3 }).run()
+            activeEditor?.chain().focus().toggleHeading({ level: 3 }).run()
           }
         >
           <Heading3 className="h-4 w-4" />
@@ -444,22 +648,28 @@ function App() {
 
         <ToolbarBtn
           title="Bullet List"
-          active={editor.isActive("bulletList")}
-          onClick={() => editor.chain().focus().toggleBulletList().run()}
+          active={activeEditor?.isActive("bulletList")}
+          onClick={() =>
+            activeEditor?.chain().focus().toggleBulletList().run()
+          }
         >
           <List className="h-4 w-4" />
         </ToolbarBtn>
         <ToolbarBtn
           title="Ordered List"
-          active={editor.isActive("orderedList")}
-          onClick={() => editor.chain().focus().toggleOrderedList().run()}
+          active={activeEditor?.isActive("orderedList")}
+          onClick={() =>
+            activeEditor?.chain().focus().toggleOrderedList().run()
+          }
         >
           <ListOrdered className="h-4 w-4" />
         </ToolbarBtn>
         <ToolbarBtn
           title="Task List"
-          active={editor.isActive("taskList")}
-          onClick={() => editor.chain().focus().toggleTaskList().run()}
+          active={activeEditor?.isActive("taskList")}
+          onClick={() =>
+            activeEditor?.chain().focus().toggleTaskList().run()
+          }
         >
           <ListTodo className="h-4 w-4" />
         </ToolbarBtn>
@@ -468,21 +678,25 @@ function App() {
 
         <ToolbarBtn
           title="Blockquote"
-          active={editor.isActive("blockquote")}
-          onClick={() => editor.chain().focus().toggleBlockquote().run()}
+          active={activeEditor?.isActive("blockquote")}
+          onClick={() =>
+            activeEditor?.chain().focus().toggleBlockquote().run()
+          }
         >
           <Quote className="h-4 w-4" />
         </ToolbarBtn>
         <ToolbarBtn
           title="Inline Code"
-          active={editor.isActive("code")}
-          onClick={() => editor.chain().focus().toggleCode().run()}
+          active={activeEditor?.isActive("code")}
+          onClick={() => activeEditor?.chain().focus().toggleCode().run()}
         >
           <Code className="h-4 w-4" />
         </ToolbarBtn>
         <ToolbarBtn
           title="Horizontal Rule"
-          onClick={() => editor.chain().focus().setHorizontalRule().run()}
+          onClick={() =>
+            activeEditor?.chain().focus().setHorizontalRule().run()
+          }
         >
           <Minus className="h-4 w-4" />
         </ToolbarBtn>
@@ -491,35 +705,43 @@ function App() {
 
         <ToolbarBtn
           title="Undo"
-          onClick={() => editor.chain().focus().undo().run()}
+          onClick={() => activeEditor?.chain().focus().undo().run()}
         >
           <Undo2 className="h-4 w-4" />
         </ToolbarBtn>
         <ToolbarBtn
           title="Redo"
-          onClick={() => editor.chain().focus().redo().run()}
+          onClick={() => activeEditor?.chain().focus().redo().run()}
         >
           <Redo2 className="h-4 w-4" />
         </ToolbarBtn>
       </div>
 
-      {/* ── Editor ──────────────────────────────────── */}
+      {/* ── Editor area (one per tab, only active visible) ── */}
       <div
         ref={editorWrapRef}
         className="flex-1 overflow-y-auto bg-white transition-colors duration-300 dark:bg-gray-900"
       >
-        <EditorContent editor={editor} />
+        {tabs.map((tab) => (
+          <TabEditor
+            key={tab.id}
+            tabId={tab.id}
+            initialContent={tab.content}
+            isActive={tab.id === activeTabId}
+            onContentChange={handleContentChange}
+            editorRef={handleEditorRef}
+          />
+        ))}
       </div>
 
       {/* ── Status Bar ──────────────────────────────── */}
       <footer className="flex h-7 shrink-0 items-center justify-between border-t border-gray-200 bg-gray-50 px-3 text-[11px] text-gray-500 dark:border-gray-800 dark:bg-gray-950 dark:text-gray-500">
         <span>
-          {mod}+Alt+C to capture &nbsp;·&nbsp; {mod}+Alt+O to show
+          {mod}+Alt+C capture &nbsp;·&nbsp; {mod}+Alt+O show &nbsp;·&nbsp;
+          Double-click tab to rename
         </span>
         <span>
-          {editor.storage.characterCount?.characters?.() ??
-            editor.getText().length}{" "}
-          chars
+          {activeEditor?.getText().length ?? 0} chars
         </span>
       </footer>
 
