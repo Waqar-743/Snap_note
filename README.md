@@ -29,13 +29,7 @@
 - **Image Paste + OCR** — Paste images directly; hover to extract text via Tesseract OCR
 - **Cross-platform** — Windows, macOS, and Linux
 
-## Screenshot
 
-<p align="center">
-  <img src="SnapNote-logo-white.png" alt="SnapNote Light Mode" width="200" />
-  &nbsp;&nbsp;
-  <img src="SnapNote-logo-Dark.png" alt="SnapNote Dark Mode" width="200" />
-</p>
 
 ## Download
 
@@ -86,6 +80,4 @@ npm run tauri build
 - **OCR:** Tesseract (via rusty-tesseract)
 - **Icons:** Lucide React
 
-## License
-
-MIT
+                                                                   **Build with Headache**
