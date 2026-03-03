@@ -1,0 +1,39 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html,
+body,
+#root {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  @apply bg-zinc-100 text-zinc-900 antialiased;
+}
+
+.tiptap-editor {
+  @apply text-zinc-800;
+}
+
+.tiptap-editor p,
+.tiptap-editor .image-node-block,
+.tiptap-editor hr {
+  @apply mb-4 border-b border-zinc-100 pb-4;
+}
+
+.tiptap-editor > *:last-child {
+  @apply mb-0 border-b-0 pb-0;
+}
+
+.tiptap-editor img {
+  max-height: 300px;
+  @apply max-w-full rounded-lg border border-zinc-200 object-contain;
+}
+
+.tiptap-editor hr,
+.tiptap-editor .editor-hr {
+  @apply border-zinc-300;
+}
